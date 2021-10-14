@@ -6,7 +6,7 @@
 
 
 void TestStackCtor() {
-	printf("Testing StackCtor:\n\n");
+	printf("-------------------------Testing StackCtor:-------------------------\n\n");
 
 	Stack st = {};
 
@@ -23,7 +23,7 @@ void TestStackCtor() {
 	printf("Testing for secondary stack creation...\n");
 
 	if ((StackCtor(&st) != 1)) {
-		printf("Test failed: func does not detect already detected stack\n");
+		printf("Test failed: func does not detect already created stack\n");
 	}
 
 	else {
@@ -37,22 +37,22 @@ void TestStackCtor() {
 }
 
 void TestPushPop(int n) {
-	printf("Testing StackPush and StackPop using %d-sized arrays:\n\n", n);
+	printf("-------------------------Testing StackPush and StackPop using %d-sized arrays:-------------------------\n\n", n);
 
 	Stack st = {};
 	int success = 1;
 	
-	printf("Testing for non-created stack detection...\n");
+	printf("Testing for uninitialized stack detection...\n");
 
 	if (!StackPush(&st, 1)) {
-		printf("Test failed: StackPush does not detect non-created stack\n");
+		printf("Test failed: StackPush does not detect uninitialized stack\n");
 		success = 0;
 	}
 	
 	int t = 0;
 
 	if (!StackPop(&st, &t)) {
-		printf("Test failed: StackPop does not detect non-created stack\n");
+		printf("Test failed: StackPop does not detect uninitialized stack\n");
 		success = 0;
 	}
 
@@ -66,6 +66,8 @@ void TestPushPop(int n) {
 	}
 
 	printf("Testing StackPush...\n");
+
+	success = 1;
 
 	if (StackPush(&st, 1)) {
 		printf("Test failed: StackPush could not push element\n");
@@ -85,6 +87,8 @@ void TestPushPop(int n) {
 	if (success) {
 		printf("Test successfull\n\n");
 	}
+
+	success = 1;
 
 	printf("Testing StackPop...\n");
 
@@ -107,6 +111,8 @@ void TestPushPop(int n) {
 	if (success) {
 		printf("Test successfull\n\n");
 	}
+
+	success = 1;
 
 	printf("Testing for stack operations priority...\n");
 
@@ -151,21 +157,23 @@ void TestPushPop(int n) {
 }
 
 void TestStackDtor() {
-	printf("Testing StackDtor:\n");
+	printf("-------------------------Testing StackDtor:-------------------------\n");
 
 	Stack st = {};
 	int success = 1;
 
-	printf("Testing for destroying non-created stack...\n");
+	printf("Testing for destroying uninitialized stack...\n");
 
 	if (!StackDtor(&st)) {
-		printf("StackDtor does not detect non-created stack\n");
+		printf("StackDtor does not detect uninitialized stack\n");
 			success = 0;
 	}
 
 	if (success) {
 		printf("Test successfull\n\n");
 	}
+
+	success = 1;
 
 	if (StackCtor(&st)) {
 		printf("Cannot create test stack\n");
@@ -185,6 +193,8 @@ void TestStackDtor() {
 		printf("Test successfull\n\n");
 	}
 
+	success = 1;
+
 	printf("Testing for detecting already destroyed stack...\n");
 
 	if (!StackDtor(&st)) {
@@ -195,6 +205,8 @@ void TestStackDtor() {
 	if (success) {
 		printf("Test successfull\n\n");
 	}
+
+	success = 1;
 
 	printf("Testing for poisoning stack elements...\n");
 
@@ -217,11 +229,26 @@ void TestStackDtor() {
 	printf("\n");
 }
 
-void TestStackResize(int n) { //переделать
-	printf("Testing hysteresis loop...\n");
+void TestStackResize(int n) { 
+	printf("-------------------------Testing StackResize-------------------------\n\n");
 
 	Stack st = {};
 	int success = 1;
+
+	printf("Testing uninitialized stack detection...\n");
+
+	if (!StackResize(&st, 1)) {
+		printf("Test failed: StackResize could not detect uninitialized stack\n");
+		success = 0;
+	}
+
+	if (success) {
+		printf("Test successfull\n\n");
+	}
+
+	printf("Testing hysteresis loop...\n");
+
+	success = 1;
 
 	if (StackCtor(&st)) {
 		printf("Cannot create test stack\n");
@@ -229,15 +256,6 @@ void TestStackResize(int n) { //переделать
 	}
 
 	int old_capacity = st.capacity;
-
-	/*for (int i = 1; i < (int)log2((double)EXP_LIM) + 2; i++) {
-		old_capacity = st.capacity;
-		old_size = st.size;
-
-		доделать
-
-	}*/
-
 
 	int i = 0; 
 

@@ -104,29 +104,29 @@ int StackResize(Stack* st, int param) {
 	assert(st);
 	assert(param != 0);
 
+	if (st->status == 0) {
+		printf("Stack was already destroyed or was not created at all\n");
+		return 1;
+	}
+
 	int old_cap = st->capacity;
-	//void* ptr = (void*)st->data;
+	void* ptr = (void*)st->data;
 
 	if (param > 0) {
 		if (st->capacity < MIN_CAP * EXP_LIM) {
-			st->data = (int*)realloc((void *)st->data, old_cap * sizeof(int) * 2);
+			st->data = (int*)realloc(ptr, st->capacity * sizeof(int) * 2);
 			st->capacity = st->capacity * 2;
-			//free(ptr);
 		}
 
 		else {
-			st->data = (int*)realloc((void *)st->data, (old_cap + MIN_CAP * LIN_ADD) * sizeof(int));
+			st->data = (int*)realloc(ptr, (st->capacity + MIN_CAP * LIN_ADD) * sizeof(int));
 			st->capacity = st->capacity + MIN_CAP * LIN_ADD;
 		}
 	}
 
 	else {
-		st->data = (int*)realloc((void*)st->data, (old_cap / 2) * sizeof(int));
+		st->data = (int*)realloc(ptr, (st->capacity / 2) * sizeof(int));
 		st->capacity = st->capacity / 2;
-
-		/*for (int i = st->capacity; i < old_cap; i++) {
-			*((int*)ptr + i) = 0xBADBAD;
-		}*/
 	}
 
 	if (!st->data) {
