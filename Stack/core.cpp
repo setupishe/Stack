@@ -7,6 +7,7 @@
 
 int StackCtor(Stack* st, size_t isize) {
 	assert(st);
+	assert(isize > 0);
 
 	if (st->status) {
 		printf("Stack was already created\n");
