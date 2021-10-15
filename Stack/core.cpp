@@ -120,7 +120,7 @@ int StackResize(Stack* st, int param) {
 
 	if (param > 0) {
 		if (st->capacity < MIN_CAP * EXP_LIM) {
-			st->data = realloc(ptr, st->capacity * st->itype * 2);
+			st->data = realloc(ptr, st->capacity * st->itype * 2); 
 			st->capacity = st->capacity * 2;
 		}
 
@@ -137,6 +137,7 @@ int StackResize(Stack* st, int param) {
 
 	if (!st->data) {
 		printf("Allocation error\n");
+		st->data = ptr;
 		return 1;
 	}
 
