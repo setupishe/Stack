@@ -1,14 +1,60 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #include "test.h"
 #include "core.h"
 
-typedef struct {
-	int a;
-	double b;
-	long double c;
-}stest;
+int AllStackPrint(Stack* st);
+
+
+void TestStackNamer(const char * testname) {
+
+	printf("-------------------------Testing StackNamer:-------------------------\n\n");
+
+	Stack st = {};
+	int success = 1;
+
+	{
+		printf("Testing for zero length name...\n");
+
+		if (StackNamer(&st, "") != 1) {
+			printf("Test failed: StackNamer could not detect zero length name\n");
+			success = 0;
+		}
+
+		if (success) {
+			printf("Test successfull\n\n");
+		}
+	}
+	{
+		printf("Testing for non-zero length name...\n");
+
+		if (StackNamer(&st, testname)) {
+			printf("Test failed: StackNamer could not name stack\n");
+			success = 0;
+		}
+
+		else {
+
+			int n = strlen(testname);
+
+			for (int i = 0; i < n; i++) {
+
+				if (st.name) {
+					if (*(st.name + i) != *(testname + i)) {
+						printf("Test failed: stack name does not match testname");
+						success = 0;
+					}
+				}
+			}
+		}
+
+		if (success) {
+			printf("Test successfull\n\n");
+		}
+	}
+}
 
 void TestStackCtor() {
 	printf("-------------------------Testing StackCtor:-------------------------\n\n");
@@ -193,7 +239,7 @@ void TestStackDtor() {
 
 	if (!StackDtor(&st)) {
 		printf("StackDtor does not detect uninitialized stack\n");
-			success = 0;
+		success = 0;
 	}
 
 	if (success) {
@@ -206,8 +252,6 @@ void TestStackDtor() {
 		printf("Cannot create test stack\n");
 		return;
 	}
-
-	void * ptr = st.data;
 
 	printf("Testing for destroying stack...\n");
 
@@ -233,27 +277,9 @@ void TestStackDtor() {
 		printf("Test successfull\n\n");
 	}
 
-	success = 1;
-
-	printf("Testing for poisoning stack elements...\n");
-
-	for (int i = 0; i < st.capacity; i++) {
-		if (*((char *)ptr + i) != 0) {
-			printf("Test failed: StackDtor did not poison %d element\n", i/st.itype);
-			printf("Element = %d, Poison = %d\n", *((char*)ptr + i), 0);
-			success = 0;
-		}
-	}
-
-	if (success) {
-		printf("Test successfull\n\n");
-	}
-
 	if (!(st.data)) {
 		free(st.data);
 	}
-
-	printf("\n");
 }
 
 void TestStackResize(int n) { 
@@ -290,12 +316,24 @@ void TestStackResize(int n) {
 		old_capacity = st.capacity;
 		stest t = { 0, 0, 0 };
 		if (StackPush(&st, &t)) {
-			printf("Test failed\n");
-			success = 0;
-			break;
+			printf("Test failed: could not push element\n");
+			return;
 		}
 		if (old_capacity != st.capacity) {
 			printf("New size = %d, new capacity = %d\n", st.size, st.capacity);
+
+			for (int k = st.size + 1; k < st.capacity; k++) {
+				stest one = {};
+				one = *(stest*)((char*)st.data + k * st.itype);
+				if (one.a != POISON.a || one.b != POISON.b || one.c != POISON.c) {
+					printf("Test failed: StackResize did not poison %d element\n", k);
+					success = 0;
+				}
+			}
+
+			if (success) {
+				printf("Poisoning successfull\n\n");
+			}
 		}
 
 		t.a++;
@@ -307,9 +345,8 @@ void TestStackResize(int n) {
 		stest t = { 0, 0, 0 };
 		old_capacity = st.capacity;
 		if (StackPop(&st, &t)) {
-			printf("Test failed\n");
-			success = 0;
-			break;
+			printf("Test failed: could not pop element\n");
+			return;
 		}
 
 		if (old_capacity != st.capacity) {
@@ -331,4 +368,20 @@ void TestStackResize(int n) {
 	}
 
 	printf("\n");
+}
+int AllStackPrint(Stack* st) {
+
+	printf("Printing stack...\n");
+
+	for (int i = 0; i < st->capacity; i++) {
+
+		printf("%d element:", i + 1);
+
+		if (StackPrint((void*)((char*)st->data + i * st->itype))) {
+			printf("StackPrint error\n");
+			return 1;
+		}
+	}
+
+	return 0;
 }
