@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "core.h"
 
 int StackNamer(Stack* st, const char* stname) {
@@ -30,15 +31,19 @@ int StackNamer(Stack* st, const char* stname) {
 	return 0;
 }
 
-int StackCtor(Stack* st, size_t isize) {
+int TrueStackCtor(Stack* st, size_t isize, const char* stack_name) {
 	assert(st);
 	assert(isize > 0);
 
-	if (st->status) {
+	if (st->status == 1) {
 		printf("Stack was already created\n");
 		return 1;
 	}
 
+	if (StackNamer(st, stack_name) == 1) {
+		printf("StackNamer could not name stack\n");
+		return 1;
+	}
 	st->capacity = MIN_CAP;
 	st->size = 0;
 	st->itype = isize;
@@ -55,11 +60,11 @@ int StackCtor(Stack* st, size_t isize) {
 }
 
 int StackPush(Stack* st, const void *ptr) {
-	assert(st);
+	assert(StackCheck(st));
 	assert(ptr);
 
-	if (!st->status) { // ToDo: assert function
-		printf("Stack was not created\n");
+	if (st->status == 0 || st->status == -1) {
+		printf("Stack was destroyed or was not created at all\n");
 		return 1;
 	}
 
@@ -78,11 +83,11 @@ int StackPush(Stack* st, const void *ptr) {
 }
 
 int StackPop(Stack* st, void *value) {
-	assert(st);
+	assert(StackCheck(st));
 	assert(value);
 
-	if (!st->status) {
-		printf("Stack was not created\n");
+	if (st->status == 0 || st->status == -1) {
+		printf("Stack was destroyed or was not created at all\n");
 		return 1;
 	}
 
@@ -110,9 +115,10 @@ int StackPop(Stack* st, void *value) {
 }
 
 int StackDtor(Stack* st) {
+	assert(StackCheck(st));
 	assert(st);
 
-	if (!st->status) {
+	if (st->status == 0 || st->status == -1) {
 		printf("Stack was already destroyed or was not created at all\n");
 		return 1;
 	}
@@ -120,11 +126,11 @@ int StackDtor(Stack* st) {
 
 	st->size = -1;
 	st->capacity = -1;
-
+	st->itype = 0;
 	free(st->data);
 
 	st->data = (int*)0xBADBAD; //todo: users poison
-	st->status = 0;
+	st->status = -1;
 
 	return 0;
 }
@@ -172,4 +178,164 @@ int StackResize(Stack* st, int param) {
 	}
 	
 	return 0;
+}
+
+int AllStackPrint(Stack* st, FILE* output) {
+
+	fprintf(output, "Printing stack...\n");
+	int max = st->capacity > MIN_CAP ? st->capacity : MIN_CAP;
+	for (int i = 0; i < max; i++) {
+
+		fprintf(output, "%d element: ", i + 1);
+
+		if (StackPrint((void*)((char*)st->data + i * st->itype), output) == 1) {
+			printf("StackPrint error\n");
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+int GetTime(char *out) {
+
+	assert(strlen(out) != 18);
+	time_t s_time;
+	struct tm* m_time;
+	char str_t[18] = "";
+
+	s_time = time(NULL);
+	m_time = localtime(&s_time);
+
+	if (strftime(str_t, 18, "%x %X", m_time) == 0) {
+		printf("strftime error\n");
+		return 1;
+	}
+	str_t[17] = '\0';
+	if (strcpy(out, (const char*)str_t) == NULL) {
+		printf("strcpy error\n");
+		return 1;
+	}
+
+	return 0;
+}
+
+int StackDump(Stack* st) {
+
+	int success = 1;
+	FILE* log;
+
+	if ((log = fopen("StackLog.txt", "a")) == NULL) {
+		printf("FILE OPENING ERROR");
+	}
+
+	char* time = (char*)calloc(18, sizeof(char));
+	GetTime(time);
+	fprintf(log, "%s:\n", time);
+
+
+	if (fprintf(log, "Stack %s dump:\n", st->name)  == 1) {
+		printf("Error: could not print name\n");
+		success = 0;
+	}
+
+	if (fprintf(log, "Item size in bytes: %d\n", st->itype) == 1) {
+		printf("Error: could not print item size \n");
+		success = 0;
+	}
+
+	if (fprintf(log, "Size: %d\n", st->size) == 1) {
+		printf("Error: could not print size \n");
+		success = 0;
+	}
+	if (fprintf(log, "Capacity: %d\n", st->capacity) == 1) {
+		printf("Error: could not print capacity \n");
+		success = 0;
+	}
+	if (fprintf(log, "Data %p\n", st->data)  == 1) {
+		printf("Error: could not print data pointer\n");
+		success = 0;
+	}
+	if (fprintf(log, "Status: %d", st->status) == 1) {
+		printf("Error: could not print status \n");
+		success = 0;
+	}
+
+	if (st->status == 1) {
+		fprintf(log, " -- initialized\n");
+	}
+	else if (st->status == 0) {
+		fprintf(log, " -- not initialized\n");
+	}
+	else if (st->status == -1) {
+		fprintf(log, " -- destroyed\n");
+	}
+	else {
+		fprintf(log, " -- broken\n");
+	}
+
+	if (st->data != NULL) {
+		if (AllStackPrint(st, log) == 1) {
+			printf("AllStackPrint error\n");
+			success = 0;
+		}
+	}
+
+	fclose(log);
+
+	if (success == 0) {
+		return 1;
+	}
+
+	else {
+		return 0;
+	}
+}
+
+int TrueStackCheck(Stack* st, const char* funcname, const char* filename, int linename) {
+
+	assert(st);
+
+	int broken = 0;
+
+	if(st->status == 0) {
+		return !broken;
+	}
+
+	else if (st->status == 1) {
+		if (st->size < 0 || st->capacity < 0 || st->size > st->capacity || st->itype <= 0 || st->data == NULL) {
+			printf("Stack %s is broken. Dumping log into StackLog.txt...\n", st->name);
+			broken = 1;
+		}
+	}
+	else if (st->status == -1) {
+		if (st->size != -1 || st->capacity != -1 || st->data != (int*)0xBADBAD || st->itype != 0) {
+			printf("Destroyed stack %s is broken.\n", st->name);
+			broken = 1;
+		}
+	}
+	else {
+		printf("Stack %s is broken. Dumping log into StackLog.txt...\n", st->name);
+		broken = 1;
+	}
+
+	if (broken == 1 && st->status != -1) {
+
+		FILE* log;
+
+		if ((log = fopen("StackLog.txt", "a")) == NULL) {
+			printf("Log opening error");
+			return !broken;
+		}
+		else {
+			fprintf(log, "--------------Called from:\n");
+			fprintf(log, "function %s, file %s, line %d\n", funcname, filename, linename);
+
+			fclose(log);
+
+			StackDump(st);
+		}
+	}
+	return !broken;
+
 }
