@@ -51,5 +51,5 @@ int GetTime(char* out);
 int StackDump(Stack* st);
 
 
-//Checks Stack's integrity
+//Checks Stack's integrity. Returns 1 for broken stack, 0 for normal stack
 int TrueStackCheck(Stack* St, const char* funcname, const char* filename, int linename);

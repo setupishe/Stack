@@ -14,12 +14,6 @@ StackCheck->Macros
 int main()
 {   
 
-    /*char* test = (char*)calloc(18, sizeof(char));
-    GetTime(test);
-    printf("%s\n", test);
-
-
-    */
     TestStackNamer("&dummy");
     TestStackCtor();
     TestPushPop(10);

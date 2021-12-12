@@ -60,7 +60,7 @@ int TrueStackCtor(Stack* st, size_t isize, const char* stack_name) {
 }
 
 int StackPush(Stack* st, const void *ptr) {
-	assert(StackCheck(st));
+	assert(!StackCheck(st));
 	assert(ptr);
 
 	if (st->status == 0 || st->status == -1) {
@@ -83,7 +83,7 @@ int StackPush(Stack* st, const void *ptr) {
 }
 
 int StackPop(Stack* st, void *value) {
-	assert(StackCheck(st));
+	assert(!StackCheck(st));
 	assert(value);
 
 	if (st->status == 0 || st->status == -1) {
@@ -115,8 +115,7 @@ int StackPop(Stack* st, void *value) {
 }
 
 int StackDtor(Stack* st) {
-	assert(StackCheck(st));
-	assert(st);
+	assert(!StackCheck(st));
 
 	if (st->status == 0 || st->status == -1) {
 		printf("Stack was already destroyed or was not created at all\n");
@@ -136,7 +135,7 @@ int StackDtor(Stack* st) {
 }
 
 int StackResize(Stack* st, int param) {
-	assert(st);
+	assert(!StackCheck(st));
 	assert(param != 0);
 
 	if (st->status == 0) {
@@ -181,7 +180,7 @@ int StackResize(Stack* st, int param) {
 }
 
 int AllStackPrint(Stack* st, FILE* output) {
-
+	assert(output);
 	fprintf(output, "Printing stack...\n");
 	int max = st->capacity > MIN_CAP ? st->capacity : MIN_CAP;
 	for (int i = 0; i < max; i++) {
@@ -198,8 +197,9 @@ int AllStackPrint(Stack* st, FILE* output) {
 }
 
 int GetTime(char *out) {
-
+	assert(out);
 	assert(strlen(out) != 18);
+
 	time_t s_time;
 	struct tm* m_time;
 	char str_t[18] = "";
@@ -299,7 +299,7 @@ int TrueStackCheck(Stack* st, const char* funcname, const char* filename, int li
 	int broken = 0;
 
 	if(st->status == 0) {
-		return !broken;
+		return broken;
 	}
 
 	else if (st->status == 1) {
@@ -325,7 +325,7 @@ int TrueStackCheck(Stack* st, const char* funcname, const char* filename, int li
 
 		if ((log = fopen("StackLog.txt", "a")) == NULL) {
 			printf("Log opening error");
-			return !broken;
+			return broken;
 		}
 		else {
 			fprintf(log, "--------------Called from:\n");
@@ -336,6 +336,6 @@ int TrueStackCheck(Stack* st, const char* funcname, const char* filename, int li
 			StackDump(st);
 		}
 	}
-	return !broken;
+	return broken;
 
 }
