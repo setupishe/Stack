@@ -6,19 +6,17 @@
 #include "test.h"
 
 /*ToDo:
-To file
-Macros
-StackCheck->Macros
+add every case to stackcheck test func
+
 */
 
 int main()
 {   
-
     TestStackNamer("&dummy");
     TestStackCtor();
     TestPushPop(10);
     TestStackDtor();
-    TestStackResize(MIN_CAP * 200);
+    TestStackResize(STACK_MIN_CAP * 200);
     TestStackDump();
     TestStackCheck();
     

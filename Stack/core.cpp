@@ -35,7 +35,7 @@ int TrueStackCtor(Stack* st, size_t isize, const char* stack_name) {
 	assert(st);
 	assert(isize > 0);
 
-	if (st->status == 1) {
+	if (st->status == STACK_INITIALISED) {
 		printf("Stack was already created\n");
 		return 1;
 	}
@@ -44,7 +44,7 @@ int TrueStackCtor(Stack* st, size_t isize, const char* stack_name) {
 		printf("StackNamer could not name stack\n");
 		return 1;
 	}
-	st->capacity = MIN_CAP;
+	st->capacity = STACK_MIN_CAP;
 	st->size = 0;
 	st->itype = isize;
 	st->data = calloc(st->capacity, isize);
@@ -54,16 +54,16 @@ int TrueStackCtor(Stack* st, size_t isize, const char* stack_name) {
 		return 1;
 	}
 
-	st->status = 1;
+	st->status = STACK_INITIALISED;
 
 	return 0;
 }
 
 int StackPush(Stack* st, const void *ptr) {
-	assert(!StackCheck(st));
+	ASSERT(StackCheck(st));
 	assert(ptr);
 
-	if (st->status == 0 || st->status == -1) {
+	if (st->status == STACK_NOT_INITIALISED || st->status == STACK_DESTROYED) {
 		printf("Stack was destroyed or was not created at all\n");
 		return 1;
 	}
@@ -86,7 +86,7 @@ int StackPop(Stack* st, void *value) {
 	assert(!StackCheck(st));
 	assert(value);
 
-	if (st->status == 0 || st->status == -1) {
+	if (st->status == STACK_NOT_INITIALISED || st->status == STACK_DESTROYED) {
 		printf("Stack was destroyed or was not created at all\n");
 		return 1;
 	}
@@ -99,9 +99,9 @@ int StackPop(Stack* st, void *value) {
 	memcpy(value, (const void*)((char*)st->data + (st->size-- - 1) * st->itype), st->itype);
 
 
-	int gap = st->capacity / LIN_ADD + 2;
+	int gap = st->capacity / STACK_LIN_ADD + 2;
 
-	if ((st->size < st->capacity / 2 - gap) && st->size > MIN_CAP) {
+	if ((st->size < st->capacity / 2 - gap) && st->size > STACK_MIN_CAP) {
 		printf("Using less then half of stack's capacity. Current capacity = %d, current size = %d\n", st->capacity, st->size);
 		printf("Resizing...\n");
 
@@ -115,9 +115,9 @@ int StackPop(Stack* st, void *value) {
 }
 
 int StackDtor(Stack* st) {
-	assert(!StackCheck(st));
+	ASSERT(StackCheck(st));
 
-	if (st->status == 0 || st->status == -1) {
+	if (st->status == STACK_NOT_INITIALISED || st->status == STACK_DESTROYED) {
 		printf("Stack was already destroyed or was not created at all\n");
 		return 1;
 	}
@@ -129,16 +129,16 @@ int StackDtor(Stack* st) {
 	free(st->data);
 
 	st->data = (int*)0xBADBAD; //todo: users poison
-	st->status = -1;
+	st->status = STACK_DESTROYED;
 
 	return 0;
 }
 
 int StackResize(Stack* st, int param) {
-	assert(!StackCheck(st));
+	ASSERT(StackCheck(st));
 	assert(param != 0);
 
-	if (st->status == 0) {
+	if (st->status == STACK_NOT_INITIALISED) {
 		printf("Stack was already destroyed or was not created at all\n");
 		return 1;
 	}
@@ -147,14 +147,14 @@ int StackResize(Stack* st, int param) {
 	void* ptr = st->data;
 
 	if (param > 0) {
-		if (st->capacity < MIN_CAP * EXP_LIM) {
+		if (st->capacity < STACK_MIN_CAP * STACK_EXP_LIM) {
 			st->data = realloc(ptr, st->capacity * st->itype * 2); 
 			st->capacity = st->capacity * 2;
 		}
 
 		else {
-			st->data = realloc(ptr, (st->capacity + MIN_CAP * LIN_ADD) * st->itype);
-			st->capacity = st->capacity + MIN_CAP * LIN_ADD;
+			st->data = realloc(ptr, (st->capacity + STACK_MIN_CAP * STACK_LIN_ADD) * st->itype);
+			st->capacity = st->capacity + STACK_MIN_CAP * STACK_LIN_ADD;
 		}
 	}
 
@@ -182,7 +182,7 @@ int StackResize(Stack* st, int param) {
 int AllStackPrint(Stack* st, FILE* output) {
 	assert(output);
 	fprintf(output, "Printing stack...\n");
-	int max = st->capacity > MIN_CAP ? st->capacity : MIN_CAP;
+	int max = st->capacity > STACK_MIN_CAP ? st->capacity : STACK_MIN_CAP;
 	for (int i = 0; i < max; i++) {
 
 		fprintf(output, "%d element: ", i + 1);
@@ -256,18 +256,18 @@ int StackDump(Stack* st) {
 		printf("Error: could not print data pointer\n");
 		success = 0;
 	}
-	if (fprintf(log, "Status: %d", st->status) == 1) {
+	if (fprintf(log, "Status: %d", st->status) == STACK_INITIALISED) {
 		printf("Error: could not print status \n");
 		success = 0;
 	}
 
-	if (st->status == 1) {
+	if (st->status == STACK_INITIALISED) {
 		fprintf(log, " -- initialized\n");
 	}
-	else if (st->status == 0) {
+	else if (st->status == STACK_NOT_INITIALISED) {
 		fprintf(log, " -- not initialized\n");
 	}
-	else if (st->status == -1) {
+	else if (st->status == STACK_DESTROYED) {
 		fprintf(log, " -- destroyed\n");
 	}
 	else {
@@ -298,28 +298,70 @@ int TrueStackCheck(Stack* st, const char* funcname, const char* filename, int li
 
 	int broken = 0;
 
-	if(st->status == 0) {
-		return broken;
-	}
-
-	else if (st->status == 1) {
-		if (st->size < 0 || st->capacity < 0 || st->size > st->capacity || st->itype <= 0 || st->data == NULL) {
-			printf("Stack %s is broken. Dumping log into StackLog.txt...\n", st->name);
-			broken = 1;
+	if(st->status == STACK_NOT_INITIALISED) {
+		if (st->size != 0) {
+			broken = STACK_BAD_SIZE;
+		}
+		else if (st->capacity != 0) {
+			broken = STACK_BAD_CAP;
+		}
+		else if (st->itype != 0) {
+			broken = STACK_BAD_ITYPE;
+		}
+		else if (st->data != NULL) {
+			broken = STACK_BAD_DATA_PTR;
+		}
+		else if (st->name != NULL) {
+			broken = STACK_BAD_NAME;
 		}
 	}
-	else if (st->status == -1) {
-		if (st->size != -1 || st->capacity != -1 || st->data != (int*)0xBADBAD || st->itype != 0) {
+
+	else if (st->status == STACK_INITIALISED) {
+		if (st->size < 0) {
+			broken = STACK_BAD_SIZE;
+		}
+		else if (st->capacity < 0) {
+			broken = STACK_BAD_CAP;
+		}
+		else if (st->itype <= 0) {
+			broken = STACK_BAD_ITYPE;
+		}
+		else if (st->size > st->capacity) {
+			broken = STACK_OVERFLOW;
+		}
+		else if (st->data == NULL) {
+			broken = STACK_BAD_DATA_PTR;
+		}
+
+		if (broken != 0) {
+			printf("Stack %s is broken. Dumping log into StackLog.txt...\n", st->name);
+		}
+	}
+	else if (st->status == STACK_DESTROYED) {
+
+		if (st->size != -1) {
+			broken = STACK_BAD_SIZE;
+		}
+		else if (st->capacity != -1) {
+			broken = STACK_BAD_CAP;
+		}
+		else if (st->itype != 0) {
+			broken = STACK_BAD_ITYPE;
+		}
+		else if (st->data != (int*)0xBADBAD) {
+			broken = STACK_BAD_DATA_PTR;
+		}
+
+		if (broken != 0) {
 			printf("Destroyed stack %s is broken.\n", st->name);
-			broken = 1;
 		}
 	}
 	else {
 		printf("Stack %s is broken. Dumping log into StackLog.txt...\n", st->name);
-		broken = 1;
+		broken = STACK_BAD_STATUS;
 	}
 
-	if (broken == 1 && st->status != -1) {
+	if (broken == 1 && st->status != STACK_DESTROYED) {
 
 		FILE* log;
 

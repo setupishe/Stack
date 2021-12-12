@@ -2,6 +2,7 @@
 
 #define StackCtor(St, a) TrueStackCtor(&St, a, #St)
 #define StackCheck(St) TrueStackCheck(St, __FUNCSIG__, __FILE__, __LINE__)
+#define ASSERT(a); if (a != 0) {printf(ErrorNames[a - 1]); exit(a);}
 
 #include "config.h"
 
@@ -20,9 +21,31 @@ typedef struct {
     char* name;
 } Stack;
 
-const int MIN_CAP = 100;
-const int EXP_LIM = 100;
-const int LIN_ADD = 10;
+enum Sizes {
+    STACK_MIN_CAP = 100,
+    STACK_EXP_LIM = 100,
+    STACK_LIN_ADD = 10
+};
+
+enum statuses {
+    STACK_NOT_INITIALISED = 0,
+    STACK_INITIALISED = 1,
+    STACK_DESTROYED = -1
+};
+
+enum Errors {
+    STACK_BAD_SIZE = 1, STACK_BAD_CAP, STACK_BAD_ITYPE, STACK_OVERFLOW, STACK_BAD_DATA_PTR, STACK_BAD_STATUS, STACK_BAD_NAME
+};
+
+static const char* ErrorNames[] = { //œŒ◊≈Ã” —“¿“» ?
+    "ERROR: Stack's size is not valid\n",
+    "ERROR: Stack's capacity is not valid\n",
+    "ERROR: Stack's item type is not valid\n",
+    "ERROR: Stack overflow! Size exceeds capacity\n",
+    "ERROR: Stack's data pointer is not valid\n",
+    "ERROR: Stack's status is not valid\n",
+    "ERROR: Stack's name is not valid\n",
+};
 
 //Puts stname to st.name
 int StackNamer(Stack *St, const char* stname);
@@ -51,5 +74,5 @@ int GetTime(char* out);
 int StackDump(Stack* st);
 
 
-//Checks Stack's integrity. Returns 1 for broken stack, 0 for normal stack
+//Checks Stack's integrity. Returns 0 for normal stack and error value for broken stack
 int TrueStackCheck(Stack* St, const char* funcname, const char* filename, int linename);

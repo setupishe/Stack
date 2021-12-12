@@ -426,7 +426,7 @@ void TestStackCheck() {
 	{
 		Stack NCstack = {};
 
-		if (StackCheck(&NCstack) == 1) {
+		if (StackCheck(&NCstack) != 0) {
 			printf("Test failed: StackCheck could not recognise non-initialized stack\n");
 			success = 0;
 		}
@@ -445,7 +445,7 @@ void TestStackCheck() {
 			return;
 		}
 
-		if (StackCheck(&Cstack) == 1) {
+		if (StackCheck(&Cstack) != 0) {
 			printf("Test failed: StackCheck could not recognise not-broken initialized stack\n");
 			success = 0;
 		}
@@ -466,7 +466,7 @@ void TestStackCheck() {
 			return;
 		}
 
-		if (StackCheck(&Dstack) == 1) {
+		if (StackCheck(&Dstack) != 0) {
 			printf("Test failed: StackCheck could not recognise not-broken destroyed stack\n");
 			success = 0;
 		}
@@ -482,7 +482,7 @@ void TestStackCheck() {
 		Stack Bstack = {};
 		Bstack.status = 8;
 
-		if (StackCheck(&Bstack) == 0) {
+		if (StackCheck(&Bstack) != 6) {
 			printf("Test failed: StackCheck could not recognise broken-status stack\n");
 			success = 0;
 		}
@@ -503,7 +503,7 @@ void TestStackCheck() {
 
 		CBstack.size = -1;
 
-		if (StackCheck(&CBstack) == 0) {
+		if (StackCheck(&CBstack) != 1) {
 			printf("Test failed: StackCheck could not recognise broken initialized stack\n");
 			success = 0;
 		}
@@ -526,7 +526,7 @@ void TestStackCheck() {
 
 		DBstack.capacity = 2;
 
-		if (StackCheck(&DBstack) == 0) {
+		if (StackCheck(&DBstack) != 2) {
 			printf("Test failed: StackCheck could not recognise broken destroyed stack\n");
 			success = 0;
 		}
