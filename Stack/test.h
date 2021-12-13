@@ -19,5 +19,8 @@ void TestStackResize(int n);
 //Tests StackDump for initialized and uninitialized stack
 void TestStackDump();
 
-//Tests StackCheck for broken and not-broken stack
+//Tests StackCheck for broken and not-broken stack of different statuses
 void TestStackCheck();
+
+//Tests StackCheck for detecting left and right attacks
+void TestCanary();

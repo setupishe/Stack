@@ -6,7 +6,6 @@
 #include "test.h"
 
 /*ToDo:
-add every case to stackcheck test func
 
 */
 
@@ -16,9 +15,10 @@ int main()
     TestStackCtor();
     TestPushPop(10);
     TestStackDtor();
-    TestStackResize(STACK_MIN_CAP * 200);
+    TestStackResize(STK_MIN_CAP * 200);
     TestStackDump();
     TestStackCheck();
+    TestCanary();
     
     return 0;
 }

@@ -5,6 +5,11 @@
 #include "test.h"
 #include "core.h"
 
+typedef struct TortureChamberStruct{
+	char LeftExec[1] = { 'a' };
+	Stack Victim;
+	char RightExec[1] = { 'a' };
+}TortureChamber;
 
 void TestStackNamer(const char * testname) {
 
@@ -535,6 +540,59 @@ void TestStackCheck() {
 			printf("Test successful\n");
 		}
 	}
+
+
+}
+
+void TestCanary() {
+
+	printf("-------------------------Testing canary protection-------------------------\n\n");
+
+
+	printf("Testing for left attack...\n");
+	{
+		TortureChamber Butcher;
+
+		if (StackCtor(Butcher.Victim, sizeof(stest))) {
+			printf("Cannot create test stack\n");
+			return;
+		}
+
+		for (int i = 0; i < 5; i++) {
+			Butcher.LeftExec[i] = 'c';
+		}
+
+		if (StackCheck(&(Butcher.Victim)) != STK_BAD_LCAN) {
+			printf("Test failed: StackCheck could not detect left attack\n");
+		}
+		else {
+			printf("Test successful\n");
+		}
+	}
+
+	printf("Testing for right attack...\n");
+	{
+		TortureChamber Butcher;
+
+		if (StackCtor(Butcher.Victim, sizeof(stest))) {
+			printf("Cannot create test stack\n");
+			return;
+		}
+
+		for (int i = 0; i < 5; i++) {
+			Butcher.RightExec[-i] = 'c';
+		}
+
+		if (StackCheck(&(Butcher.Victim)) != STK_BAD_RCAN) {
+			printf("Test failed: StackCheck could not detect right attack\n");
+		}
+		else {
+			printf("Test successful\n");
+		}
+	}
+
+
+
 
 
 }
