@@ -2,9 +2,20 @@
 
 #define StackCtor(St, a) TrueStackCtor(&St, a, #St)
 #define StackCheck(St) TrueStackCheck(St, __FUNCSIG__, __FILE__, __LINE__)
-#define ASSERT(a); if (a != 0) {printf(ErrorNames[a - 1]); exit(a);}
+#define ASSERT(a); if (a != 0) {printf("\nStack's integrity compromised: exiting... \n");\
+    StackPrintError(a);\
+    exit(a);}
 
 #include "config.h"
+
+typedef unsigned long int canary;
+static canary LCAN_VALUE = 0xBEBEBEBE;
+static canary RCAN_VALUE = 0xBABABABA;
+static canary D_LCAN_VALUE = 0xDADADADA;
+static canary D_RCAN_VALUE = 0xDEDEDEDE;
+static canary N_LCAN_VALUE = 0xCACACACA;
+static canary N_LCAN_VALUE = 0xCECECECE;
+
 
 //Stack stores int values in data; 
 // current amount = size; 
@@ -12,18 +23,33 @@
 // initialized/unintialized = status; 
 // item size in bytes = itype
 // stack name = name
-// "canary" guards = LCan and RCan
+// "canary" guards: LCan and RCan for stack structure values
+// pointers for "canary" guards: DataLCanPtr and DataRCanPtr for data integrity, NameLCanPtr and NameRCanPtr for name integrity,
+
 typedef struct StackStruct{
-    long unsigned int LCan = 0xBEBEBE;
+    canary LCan = LCAN_VALUE;
 
-    int size;
-    int capacity;
-    void* data;
-    int status;
-    size_t itype;
-    char* name;
+    int size = 0;
+    int capacity = 0;
+    int status = 0;
+    size_t itype = 0;
 
-    long unsigned int RCan = 0xBABABA;
+    void* chunk = NULL;
+ 
+    void* data = NULL;
+    canary* DataLCanPtr = NULL;
+    canary* DataRCanPtr = NULL;
+
+    char* name = NULL;
+    canary* NameLCanPtr = NULL;
+    canary* NameRCanPtr = NULL;
+
+    canary RCan = RCAN_VALUE;
+
+
+
+    unsigned long int HashSum = 0;
+
 } Stack;
 
 enum Sizes {
@@ -38,11 +64,19 @@ enum statuses {
     STK_DESTROYED = -1
 };
 
-enum Errors {
-    STK_BAD_SIZE = 1, STK_BAD_CAP, STK_BAD_ITYPE, STK_OVERFLOW, STK_BAD_DATA_PTR, STK_BAD_STATUS, STK_BAD_NAME, STK_BAD_LCAN, STK_BAD_RCAN
+enum Errors : unsigned long {
+    STK_BAD_SIZE = 1,
+    STK_BAD_CAP = 2,
+    STK_BAD_ITYPE = 4,
+    STK_OVERFLOW = 8,
+    STK_BAD_DATA_PTR = 16,
+    STK_BAD_STATUS = 32,
+    STK_BAD_NAME = 64,
+    STK_BAD_LCAN = 128,
+    STK_BAD_RCAN = 256
 };
 
-static const char* ErrorNames[] = { //œŒ◊≈Ã” —“¿“» ?
+static const char* ErrorNames[] = {
     "ERROR: Stack's size is not valid\n",
     "ERROR: Stack's capacity is not valid\n",
     "ERROR: Stack's item type is not valid\n",
@@ -80,6 +114,11 @@ int GetTime(char* out);
 //Prints every stack parameter
 int StackDump(Stack* st);
 
+//Checks Stack's integrity. Returns 0 for normal stack and error(s) value for broken stack
+unsigned long int TrueStackCheck(Stack* St, const char* funcname, const char* filename, int linename);
 
-//Checks Stack's integrity. Returns 0 for normal stack and error value for broken stack
-int TrueStackCheck(Stack* St, const char* funcname, const char* filename, int linename);
+//Prints error(s) names using unsigned long int error parameter. Returns number of printed errors or -1 in case of failure
+int StackPrintError(unsigned long int error);
+
+//Makes hash-sum of Stack and puts it into it's HashSum value
+unsigned long int StackHash(Stack* st);

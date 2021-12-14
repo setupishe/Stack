@@ -13,7 +13,7 @@ typedef struct TortureChamberStruct{
 
 void TestStackNamer(const char * testname) {
 
-	printf("-------------------------Testing StackNamer:-------------------------\n\n");
+	printf("\n\n-------------------------Testing StackNamer:-------------------------\n\n");
 
 	Stack st = {};
 	int success = 1;
@@ -62,7 +62,7 @@ void TestStackNamer(const char * testname) {
 }
 
 void TestStackCtor() {
-	printf("-------------------------Testing StackCtor:-------------------------\n\n");
+	printf("\n\n-------------------------Testing StackCtor:-------------------------\n\n");
 
 	Stack st = {};
 
@@ -120,7 +120,7 @@ void TestStackCtor() {
 }
 
 void TestPushPop(int n) {
-	printf("-------------------------Testing StackPush and StackPop using %d-sized arrays:-------------------------\n\n", n);
+	printf("\n\n-------------------------Testing StackPush and StackPop using %d-sized arrays:-------------------------\n\n", n);
 
 	Stack st = {};
 	int success = 1;
@@ -237,7 +237,7 @@ void TestPushPop(int n) {
 }
 	
 void TestStackDtor() {
-	printf("-------------------------Testing StackDtor:-------------------------\n");
+	printf("\n\n-------------------------Testing StackDtor:-------------------------\n\n");
 
 	Stack st = {};
 	int success = 1;
@@ -288,7 +288,7 @@ void TestStackDtor() {
 }
 
 void TestStackResize(int n) { 
-	printf("-------------------------Testing StackResize-------------------------\n\n");
+	printf("\n\n-------------------------Testing StackResize-------------------------\n\n");
 
 	Stack st = {};
 	int success = 1;
@@ -370,7 +370,7 @@ void TestStackResize(int n) {
 }
 
 void TestStackDump() {
-	printf("-------------------------Testing StackDump-------------------------\n\n");
+	printf("\n\n-------------------------Testing StackDump-------------------------\n\n");
 
 	Stack st = {};
 	int success = 1;
@@ -425,7 +425,7 @@ void TestStackCheck() {
 
 	int success = 1;
 
-	printf("-------------------------Testing StackCheck-------------------------\n\n");
+	printf("\n\n-------------------------Testing StackCheck-------------------------\n\n");
 
 	printf("Testing with non-initialized stack...\n");
 	{
@@ -487,7 +487,7 @@ void TestStackCheck() {
 		Stack Bstack = {};
 		Bstack.status = 8;
 
-		if (StackCheck(&Bstack) != 6) {
+		if (StackCheck(&Bstack) == 0) {
 			printf("Test failed: StackCheck could not recognise broken-status stack\n");
 			success = 0;
 		}
@@ -508,7 +508,7 @@ void TestStackCheck() {
 
 		CBstack.size = -1;
 
-		if (StackCheck(&CBstack) != 1) {
+		if (StackCheck(&CBstack) == 0) {
 			printf("Test failed: StackCheck could not recognise broken initialized stack\n");
 			success = 0;
 		}
@@ -531,7 +531,7 @@ void TestStackCheck() {
 
 		DBstack.capacity = 2;
 
-		if (StackCheck(&DBstack) != 2) {
+		if (StackCheck(&DBstack) == 0) {
 			printf("Test failed: StackCheck could not recognise broken destroyed stack\n");
 			success = 0;
 		}
@@ -546,7 +546,7 @@ void TestStackCheck() {
 
 void TestCanary() {
 
-	printf("-------------------------Testing canary protection-------------------------\n\n");
+	printf("\n\n-------------------------Testing canary protection-------------------------\n\n");
 
 
 	printf("Testing for left attack...\n");
@@ -590,9 +590,65 @@ void TestCanary() {
 			printf("Test successful\n");
 		}
 	}
+}
 
+void TestPrintError() {
 
+	printf("\n\n-------------------------Testing StackPrintError-------------------------\n\n");
 
+	unsigned long int code = 0;
 
+	printf("Testing for no errors code...\n");
+	{
+		if (StackPrintError(code) != 0) {
+			printf("Test failed: StackPrintError could not proceed zero errors code\n");
+		}
+		else {
+			printf("Test successful\n");
+		}
+	}
+
+	printf("Testing for all errors code...\n");
+	{
+		code = 511;
+
+		if (StackPrintError(code) != 9) {
+			printf("Test failed: StackPrintError could not proceed all errors code\n");
+		}
+		else {
+			printf("Test successful\n");
+		}
+	}
+
+	printf("Testing for all errors code...\n");
+	{
+		code = 441;
+
+		if (StackPrintError(code) != 6) {
+			printf("Test failed: StackPrintError could not proceed three errors code\n");
+		}
+		else {
+			printf("Test successful\n");
+		}
+	}
+}
+
+void TestStackHash() {
+
+	printf("\n\n-------------------------Testing StackPrintError-------------------------\n\n");
+
+	printf("Testing with not-initialised stack...\n"); 
+	{
+		Stack st;
+
+		if (StackHash(&st) != 0) {
+			printf("Test failed: StackHash returned wrong HashSum\n");
+		}
+
+		else {
+			printf("Test successful\n");
+		}
+	}
+	
 
 }

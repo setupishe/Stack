@@ -44,10 +44,13 @@ int TrueStackCtor(Stack* st, size_t isize, const char* STK_name) {
 		printf("StackNamer could not name stack\n");
 		return 1;
 	}
+
 	st->capacity = STK_MIN_CAP;
 	st->size = 0;
 	st->itype = isize;
+
 	st->data = calloc(st->capacity, isize);
+
 
 	if (!(st->data)) {
 		printf("Cannot create stack\n");
@@ -256,7 +259,7 @@ int StackDump(Stack* st) {
 		printf("Error: could not print data pointer\n");
 		success = 0;
 	}
-	if (fprintf(log, "Status: %d", st->status) == STK_INITIALISED) {
+	if (fprintf(log, "Status: %d", st->status) == 1) {
 		printf("Error: could not print status \n");
 		success = 0;
 	}
@@ -292,72 +295,71 @@ int StackDump(Stack* st) {
 	}
 }
 
-int TrueStackCheck(Stack* st, const char* funcname, const char* filename, int linename) {
+unsigned long int TrueStackCheck(Stack* st, const char* funcname, const char* filename, int linename) {
 
 	assert(st);
 
-	int broken = 0;
+	unsigned long int broken = 0;
 
-	if (st->LCan != 0xBEBEBE) {
-		broken = STK_BAD_LCAN;
+	if (st->LCan != LCAN_VALUE) {
+		broken |= STK_BAD_LCAN;
 	}
 
-	else if (st->RCan != 0xBABABA) {
-		broken = STK_BAD_RCAN;
+	else if (st->RCan != RCAN_VALUE) {
+		broken |= STK_BAD_RCAN;
 	}
 
 	if(st->status == STK_NOT_INITIALISED) {
 		if (st->size != 0) {
-			broken = STK_BAD_SIZE;
+			broken |= STK_BAD_SIZE;
 		}
 		else if (st->capacity != 0) {
-			broken = STK_BAD_CAP;
+			broken |= STK_BAD_CAP;
 		}
 		else if (st->itype != 0) {
-			broken = STK_BAD_ITYPE;
+			broken |= STK_BAD_ITYPE;
 		}
 		else if (st->data != NULL) {
-			broken = STK_BAD_DATA_PTR;
+			broken |= STK_BAD_DATA_PTR;
 		}
 		else if (st->name != NULL) {
-			broken = STK_BAD_NAME;
+			broken |= STK_BAD_NAME;
 		}
 	}
 
 	else if (st->status == STK_INITIALISED) {
 		if (st->size < 0) {
-			broken = STK_BAD_SIZE;
+			broken |= STK_BAD_SIZE;
 		}
 		else if (st->capacity < 0) {
-			broken = STK_BAD_CAP;
+			broken |= STK_BAD_CAP;
 		}
 		else if (st->itype <= 0) {
-			broken = STK_BAD_ITYPE;
+			broken |= STK_BAD_ITYPE;
 		}
 		else if (st->size > st->capacity) {
-			broken = STK_OVERFLOW;
+			broken |= STK_OVERFLOW;
 		}
 		else if (st->data == NULL) {
-			broken = STK_BAD_DATA_PTR;
+			broken |= STK_BAD_DATA_PTR;
 		}
-
-		if (broken != 0) {
-			printf("Stack %s is broken. Dumping log into StackLog.txt...\n", st->name);
+		else if (st->name == NULL) {
+			broken |= STK_BAD_NAME;
 		}
 	}
 	else if (st->status == STK_DESTROYED) {
 
 		if (st->size != -1) {
-			broken = STK_BAD_SIZE;
+			broken |= STK_BAD_SIZE;
 		}
 		else if (st->capacity != -1) {
-			broken = STK_BAD_CAP;
+			broken |= STK_BAD_CAP;
 		}
 		else if (st->itype != 0) {
-			broken = STK_BAD_ITYPE;
+			broken |= STK_BAD_ITYPE;
 		}
 		else if (st->data != (int*)0xBADBAD) {
-			broken = STK_BAD_DATA_PTR;
+			broken |= STK_BAD_DATA_PTR;
 		}
 
 		if (broken != 0) {
@@ -365,11 +367,12 @@ int TrueStackCheck(Stack* st, const char* funcname, const char* filename, int li
 		}
 	}
 	else {
-		printf("Stack %s is broken. Dumping log into StackLog.txt...\n", st->name);
-		broken = STK_BAD_STATUS;
+		broken |= STK_BAD_STATUS;
 	}
 
-	if (broken == 1 && st->status != STK_DESTROYED) {
+	if (broken != 0 && st->status != STK_DESTROYED) {
+
+		printf("Stack %s is broken. Dumping log into StackLog.txt...\n", st->name);
 
 		FILE* log;
 
@@ -387,5 +390,52 @@ int TrueStackCheck(Stack* st, const char* funcname, const char* filename, int li
 		}
 	}
 	return broken;
+}
+
+int StackPrintError(unsigned long int error) {
+
+	assert(error >= 0);
+
+	int code = 1;
+	int printed = 0;
+
+	for (int i = 0; i <= 8; i++) {
+
+		if (error & code) {
+			if (printf(ErrorNames[i]) < 0) {
+				printf("Could not print error\n");
+				printed = -1;
+				break;
+			}
+			else {
+				printed++;
+			}
+		}
+		code *= 2;
+	}
+
+	return printed;
+}
+
+unsigned long int StackHash(Stack* st) {
+
+	assert(st);
+
+	unsigned long int Sum = 0;
+
+	Sum += (unsigned long int)(st->LCan + st->RCan);
+	Sum += (unsigned long int)(st->size + st->capacity + st->status + st->itype);
+	
+	for (int i = 0; i < strlen(st->name); i++) {
+		Sum += i * int(*(st->name + i));
+	}
+
+	for (int i = 0; i < st->capacity * st->itype; i++) {
+		Sum += i * int(*((int*)st->data + i));
+	}
+
+	st->HashSum = Sum;
+
+	return Sum;
 
 }

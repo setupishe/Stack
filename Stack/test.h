@@ -24,3 +24,9 @@ void TestStackCheck();
 
 //Tests StackCheck for detecting left and right attacks
 void TestCanary();
+
+//Tests StackPrintError using different error codes
+void TestPrintError();
+
+//Tests StackHash using initialised and not-initialised stack
+void TestStackHash();
