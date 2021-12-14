@@ -2,8 +2,9 @@
 
 #define StackCtor(St, a) TrueStackCtor(&St, a, #St)
 #define StackCheck(St) TrueStackCheck(St, __FUNCSIG__, __FILE__, __LINE__)
-#define ASSERT(a); if (a != 0) {printf("\nStack's integrity compromised: exiting... \n");\
-    unsigned long int ErrorCode = a; StackPrintError(ErrorCode);\
+#define ASSERT(a);  unsigned long int ErrorCode = a; if (ErrorCode != 0){\
+    printf("\nStack's integrity compromised: exiting... \n");\
+    StackPrintError(ErrorCode);\
     exit(ErrorCode);}
 
 #include "config.h"
