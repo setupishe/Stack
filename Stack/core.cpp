@@ -19,16 +19,26 @@ int StackNamer(Stack* st, const char* stname) {
 		return 1;
 	}
 
-	if (!(st->name = (char*)calloc(n, sizeof(char)))) {
+	if (!(st->namechunk = malloc(n*sizeof(char) + 2 * sizeof(canary) + 1))) {
 		printf("Memory allocation error\n");
 		return 1;
 	}
+
+	st->name = (char*)st->namechunk + sizeof(canary);
+	st->NameLCanPtr = (canary*)st->namechunk;
+	st->NameRCanPtr = (canary*)((char *)st->namechunk + n * sizeof(char) + sizeof(canary) + 1);
+
+	*(st->NameLCanPtr) = N_LCAN_VALUE;
+	*(st->NameRCanPtr) = N_RCAN_VALUE;
+
 
 	if (!(st->name = strcpy(st->name, stname))) {
 		printf("String copying failed\n");
 		return 1;
 	}
-	return 0;
+	else {
+		return 0;
+	}
 }
 
 int TrueStackCtor(Stack* st, size_t isize, const char* STK_name) {
@@ -49,7 +59,18 @@ int TrueStackCtor(Stack* st, size_t isize, const char* STK_name) {
 	st->size = 0;
 	st->itype = isize;
 
-	st->data = calloc(st->capacity, isize);
+	if (!(st->datachunk = malloc(st->capacity * isize + 2 * sizeof(canary)))) {
+		printf("Memory allocation error\n");
+		return 1;
+	}
+
+	if (StackArrangeData(st) == 1) {
+		printf("Data canaries arrangement error\n");
+		return 1;
+	}
+
+	*(st->DataLCanPtr) = D_LCAN_VALUE;
+	*(st->DataRCanPtr) = D_RCAN_VALUE;
 
 
 	if (!(st->data)) {
@@ -105,7 +126,7 @@ int StackPop(Stack* st, void *value) {
 	int gap = st->capacity / STK_LIN_ADD + 2;
 
 	if ((st->size < st->capacity / 2 - gap) && st->size > STK_MIN_CAP) {
-		printf("Using less then half of stack's capacity. Current capacity = %d, current size = %d\n", st->capacity, st->size);
+		printf("Using less then a half of stack's capacity. Current capacity = %d, current size = %d\n", st->capacity, st->size);
 		printf("Resizing...\n");
 
 		if (StackResize(st, -1)) {
@@ -129,9 +150,9 @@ int StackDtor(Stack* st) {
 	st->size = -1;
 	st->capacity = -1;
 	st->itype = 0;
-	free(st->data);
+	free(st->datachunk);
 
-	st->data = (int*)0xBADBAD; //todo: users poison
+	st->data = (int*)0xBADBAD; 
 	st->status = STK_DESTROYED;
 
 	return 0;
@@ -147,23 +168,47 @@ int StackResize(Stack* st, int param) {
 	}
 
 	int old_cap = st->capacity;
-	void* ptr = st->data;
+	void* ptr = st->datachunk;
 
 	if (param > 0) {
 		if (st->capacity < STK_MIN_CAP * STK_EXP_LIM) {
-			st->data = realloc(ptr, st->capacity * st->itype * 2); 
+			canary temp = *st->DataRCanPtr;
+			st->datachunk = realloc(ptr, st->capacity * st->itype * 2 + 2 * sizeof(canary)); 
 			st->capacity = st->capacity * 2;
+
+			if (StackArrangeData(st) == 1) {
+				printf("Data canaries arrangement error\n");
+				return 1;
+			}
+
+			*st->DataRCanPtr = temp;
 		}
 
 		else {
-			st->data = realloc(ptr, (st->capacity + STK_MIN_CAP * STK_LIN_ADD) * st->itype);
+			canary temp = *st->DataRCanPtr;
+			st->datachunk = realloc(ptr, (st->capacity + STK_MIN_CAP * STK_LIN_ADD) * st->itype + 2 * sizeof(canary));
 			st->capacity = st->capacity + STK_MIN_CAP * STK_LIN_ADD;
+
+			if (StackArrangeData(st) == 1) {
+				printf("Data canaries arrangement error\n");
+				return 1;
+			}
+
+			*st->DataRCanPtr = temp;
 		}
 	}
 
 	else {
+		canary temp = *st->DataRCanPtr;
 		st->data = realloc(ptr, (st->capacity / 2) * st->itype);
 		st->capacity = st->capacity / 2;
+
+		if (StackArrangeData(st) == 1) {
+			printf("Data canaries arrangement error\n");
+			return 1;
+		}
+
+		*st->DataRCanPtr = temp;
 	}
 
 
@@ -284,6 +329,8 @@ int StackDump(Stack* st) {
 		}
 	}
 
+	fprintf(log, "\n\n");
+
 	fclose(log);
 
 	if (success == 0) {
@@ -305,24 +352,25 @@ unsigned long int TrueStackCheck(Stack* st, const char* funcname, const char* fi
 		broken |= STK_BAD_LCAN;
 	}
 
-	else if (st->RCan != RCAN_VALUE) {
+	if (st->RCan != RCAN_VALUE) {
 		broken |= STK_BAD_RCAN;
 	}
+	
 
 	if(st->status == STK_NOT_INITIALISED) {
 		if (st->size != 0) {
 			broken |= STK_BAD_SIZE;
 		}
-		else if (st->capacity != 0) {
+		if (st->capacity != 0) {
 			broken |= STK_BAD_CAP;
 		}
-		else if (st->itype != 0) {
+		if (st->itype != 0) {
 			broken |= STK_BAD_ITYPE;
 		}
-		else if (st->data != NULL) {
+		if (st->data != NULL) {
 			broken |= STK_BAD_DATA_PTR;
 		}
-		else if (st->name != NULL) {
+		if (st->name != NULL) {
 			broken |= STK_BAD_NAME;
 		}
 	}
@@ -331,20 +379,36 @@ unsigned long int TrueStackCheck(Stack* st, const char* funcname, const char* fi
 		if (st->size < 0) {
 			broken |= STK_BAD_SIZE;
 		}
-		else if (st->capacity < 0) {
+		if (st->capacity < 0) {
 			broken |= STK_BAD_CAP;
 		}
-		else if (st->itype <= 0) {
+		if (st->itype <= 0) {
 			broken |= STK_BAD_ITYPE;
 		}
-		else if (st->size > st->capacity) {
+		if (st->size > st->capacity) {
 			broken |= STK_OVERFLOW;
 		}
-		else if (st->data == NULL) {
+		if (st->data == NULL) {
 			broken |= STK_BAD_DATA_PTR;
 		}
-		else if (st->name == NULL) {
+		if (st->name == NULL) {
 			broken |= STK_BAD_NAME;
+		}
+
+		if (*st->DataLCanPtr != D_LCAN_VALUE) {
+			broken |= STK_BAD_D_LCAN;
+		}
+
+		if (*st->DataRCanPtr != D_RCAN_VALUE) {
+			broken |= STK_BAD_D_RCAN;
+		}
+
+		if (*st->NameLCanPtr != N_LCAN_VALUE) {
+			broken |= STK_BAD_N_LCAN;
+		}
+
+		if (*st->NameRCanPtr != N_RCAN_VALUE) {
+			broken |= STK_BAD_N_RCAN;
 		}
 	}
 	else if (st->status == STK_DESTROYED) {
@@ -352,13 +416,13 @@ unsigned long int TrueStackCheck(Stack* st, const char* funcname, const char* fi
 		if (st->size != -1) {
 			broken |= STK_BAD_SIZE;
 		}
-		else if (st->capacity != -1) {
+		if (st->capacity != -1) {
 			broken |= STK_BAD_CAP;
 		}
-		else if (st->itype != 0) {
+		if (st->itype != 0) {
 			broken |= STK_BAD_ITYPE;
 		}
-		else if (st->data != (int*)0xBADBAD) {
+		if (st->data != (int*)0xBADBAD) {
 			broken |= STK_BAD_DATA_PTR;
 		}
 
@@ -399,7 +463,7 @@ int StackPrintError(unsigned long int error) {
 	int code = 1;
 	int printed = 0;
 
-	for (int i = 0; i <= 8; i++) {
+	for (int i = 0; i <= 12; i++) {
 
 		if (error & code) {
 			if (printf(ErrorNames[i]) < 0) {
@@ -438,4 +502,18 @@ unsigned long int StackHash(Stack* st) {
 
 	return Sum;
 
+}
+
+int StackArrangeData(Stack* st) {
+
+	st->data = (char*)st->datachunk + sizeof(canary);
+	st->DataLCanPtr = (canary*)st->datachunk;
+	st->DataRCanPtr = (canary*)((char*)st->datachunk + st->capacity * st->itype + sizeof(canary));
+
+	if (st->data == NULL || st->DataLCanPtr == NULL || st->DataRCanPtr == NULL) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
 }

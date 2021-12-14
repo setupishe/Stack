@@ -21,7 +21,7 @@ void TestStackNamer(const char * testname) {
 	printf("Testing for zero length name...\n");
 	{
 		if (StackNamer(&st, "") != 1) {
-			printf("Test failed: StackNamer could not detect zero length name\n");
+			printf("TEST FAILED: StackNamer could not detect zero length name\n");
 			success = 0;
 		}
 
@@ -34,7 +34,7 @@ void TestStackNamer(const char * testname) {
 	{
 
 		if (StackNamer(&st, testname)) {
-			printf("Test failed: StackNamer could not name stack\n");
+			printf("TEST FAILED: StackNamer could not name stack\n");
 			success = 0;
 		}
 
@@ -46,7 +46,7 @@ void TestStackNamer(const char * testname) {
 
 				if (st.name) {
 					if (*(st.name + i) != *(testname + i)) {
-						printf("Test failed: stack name does not match testname\n");
+						printf("TEST FAILED: stack name does not match testname\n");
 						success = 0;
 					}
 				}
@@ -58,7 +58,7 @@ void TestStackNamer(const char * testname) {
 		}
 	}
 
-	free(st.data);
+	free(st.datachunk);
 }
 
 void TestStackCtor() {
@@ -69,7 +69,7 @@ void TestStackCtor() {
 	printf("Testing for stack creation...\n");
 	{
 		if ((StackCtor(st, sizeof(int)) != 0)) {
-			printf("Test failed: func does not create stack\n");
+			printf("TEST FAILED: func does not create stack\n");
 		}
 
 		else {
@@ -80,15 +80,15 @@ void TestStackCtor() {
 	printf("Testing for secondary stack creation...\n");
 	{
 		if ((StackCtor(st, sizeof(int)) != 1)) {
-			printf("Test failed: StackCtor does not detect already created stack\n");
+			printf("TEST FAILED: StackCtor does not detect already created stack\n");
 		}
 
 		else {
 			printf("Test successful\n\n");
 		}
 
-		if (!(st.data)) {
-			free(st.data);
+		if (!(st.datachunk)) {
+			free(st.datachunk);
 		}
 	}
 
@@ -99,19 +99,19 @@ void TestStackCtor() {
 			Stack test_st = {};
 
 			if (StackCtor(test_st, i)) {
-				printf("Test failed: StackCtor could not create stack\n");
+				printf("TEST FAILED: StackCtor could not create stack\n");
 			}
 
 			else if (test_st.itype != i) {
-				printf("Test failed: stack.itype != i: %d != %d\n", test_st.itype, i);
+				printf("TEST FAILED: stack.itype != i: %d != %d\n", test_st.itype, i);
 			}
 
 			else {
 				printf("Test successfull\n");
 			}
 
-			if (!(test_st.data)) {
-				free(test_st.data);
+			if (!(test_st.datachunk)) {
+				free(test_st.datachunk);
 			}
 		}
 	}
@@ -131,12 +131,12 @@ void TestPushPop(int n) {
 		int t = 0;
 		
 		if (!StackPush(&st, &t)) {
-			printf("Test failed: StackPush does not detect uninitialized stack\n");
+			printf("TEST FAILED: StackPush does not detect uninitialized stack\n");
 			success = 0;
 		}
 
 		if (!StackPop(&st, &t)) {
-			printf("Test failed: StackPop does not detect uninitialized stack\n");
+			printf("TEST FAILED: StackPop does not detect uninitialized stack\n");
 			success = 0;
 		}
 
@@ -156,7 +156,7 @@ void TestPushPop(int n) {
 		stest t1 = { 1, 2.0, 3 };
 
 		if (StackPush(&st, &t1)) {
-			printf("Test failed: StackPush could not push element\n");
+			printf("TEST FAILED: StackPush could not push element\n");
 			success = 0;
 		}
 
@@ -168,12 +168,12 @@ void TestPushPop(int n) {
 		stest t2 = { 0, 0, 0 };
 
 		if (StackPop(&st, &t2)) {
-			printf("Test failed: StackPop could not pop element\n");
+			printf("TEST FAILED: StackPop could not pop element\n");
 			success = 0;
 		}
 
 		else if (t1.a != t2.a || t1.b != t2.b || t1.c != t2.c) {
-			printf("Test failed: popped value does not match pushed value:\n");
+			printf("TEST FAILED: popped value does not match pushed value:\n");
 			printf("Pushed value: %d %f %f\n", t1.a, t1.b, t1.c);
 			printf("Popped value: %d %f %f\n", t2.a, t2.b, t2.c);
 			success = 0;
@@ -184,14 +184,13 @@ void TestPushPop(int n) {
 		}
 
 		else if (!StackPop(&st, &t1)) {
-			printf("Test failed: StackPop does not detect empty stack\n");
+			printf("TEST FAILED: StackPop does not detect empty stack\n");
 		}
 
 	}
 
 	printf("Testing for stack operations priority...\n");
 	{
-		stest t = { 1, 2, 3};
 		stest* one = (stest*)calloc(n, sizeof(stest));
 		stest* two = (stest*)calloc(n, sizeof(stest));
 
@@ -206,14 +205,16 @@ void TestPushPop(int n) {
 		}
 
 		for (int i = 0; i < n; i++) {
-			one[i].a++;
-			one[i].b++;
-			one[i].c++;
+			one[i].a += i;
+			one[i].b += i;
+			one[i].c += i;
 		}
 
 		for (int i = 0; i < n; i++) {
 			StackPush(&st, one + i);
 		}
+
+		StackDump(&st);/////////////
 
 		for (int i = 0; i < n; i++) {
 			StackPop(&st, two + n - 1 - i);
@@ -221,7 +222,7 @@ void TestPushPop(int n) {
 
 		for (int i = 0; i < n; i++) {
 			if (one[i].a != two[i].a || one[i].b != two[i].b || one[i].c != two[i].c) {
-				printf("Test failed: popped value does not match pushed value:\n");
+				printf("TEST FAILED: popped value does not match pushed value:\n");
 				printf("Pushed value: %d %f %f\n", one[i].a, one[i].b, one[i].c);
 				printf("Popped value: %d %f %f\n", two[i].a, two[i].b, two[i].c);
 				success = 0;
@@ -232,7 +233,7 @@ void TestPushPop(int n) {
 			printf("Test successfull\n\n");
 		}
 	}
-	free(st.data);
+	free(st.datachunk);
 	printf("\n");
 }
 	
@@ -261,7 +262,7 @@ void TestStackDtor() {
 	printf("Testing for destroying stack...\n");
 	{
 		if (StackDtor(&st)) {
-			printf("Test failed: StackDtor could not destroy stack\n");
+			printf("TEST FAILED: StackDtor could not destroy stack\n");
 			success = 0;
 		}
 
@@ -273,7 +274,7 @@ void TestStackDtor() {
 	printf("Testing for detecting already destroyed stack...\n");
 	{
 		if (!StackDtor(&st)) {
-			printf("Test failed: StackDtor could not detected already destroyed stack\n");
+			printf("TEST FAILED: StackDtor could not detected already destroyed stack\n");
 			success = 0;
 		}
 
@@ -283,7 +284,7 @@ void TestStackDtor() {
 	}
 
 	if (!(st.data)) {
-		free(st.data);
+		free(st.datachunk);
 	}
 }
 
@@ -296,7 +297,7 @@ void TestStackResize(int n) {
 	printf("Testing uninitialized stack detection...\n");
 	{
 		if (!StackResize(&st, 1)) {
-			printf("Test failed: StackResize could not detect uninitialized stack\n");
+			printf("TEST FAILED: StackResize could not detect uninitialized stack\n");
 			success = 0;
 		}
 
@@ -319,7 +320,7 @@ void TestStackResize(int n) {
 		for (i = 0; i < n; i++) {
 			old_capacity = st.capacity;
 			if (StackPush(&st, &t)) {
-				printf("Test failed: could not push element\n");
+				printf("TEST FAILED: could not push element\n");
 				return;
 			}
 			if (old_capacity != st.capacity) {
@@ -329,7 +330,7 @@ void TestStackResize(int n) {
 					stest one = {};
 					one = *(stest*)((char*)st.data + k * st.itype);
 					if (one.a != POISON.a || one.b != POISON.b || one.c != POISON.c) {
-						printf("Test failed: StackResize did not poison %d element\n", k);
+						printf("TEST FAILED: StackResize did not poison %d element\n", k);
 						success = 0;
 					}
 				}
@@ -347,7 +348,7 @@ void TestStackResize(int n) {
 		for (; i > 0; i--) {
 			old_capacity = st.capacity;
 			if (StackPop(&st, &t)) {
-				printf("Test failed: could not pop element\n");
+				printf("TEST FAILED: could not pop element\n");
 				return;
 			}
 
@@ -362,8 +363,8 @@ void TestStackResize(int n) {
 		}
 	}
 
-	if (!(st.data)) {
-		free(st.data);
+	if (!(st.datachunk)) {
+		free(st.datachunk);
 	}
 
 	printf("\n");
@@ -378,7 +379,7 @@ void TestStackDump() {
 	printf("Testing for dumping uninitialized stack\n");
 	{
 		if (StackDump(&st) == 1) {
-			printf("Test failed: StackDump could not dump uninitialized stack\n");
+			printf("TEST FAILED: StackDump could not dump uninitialized stack\n");
 			success = 0;
 		}
 
@@ -397,7 +398,7 @@ void TestStackDump() {
 		stest t = { 0, 0, 0 };
 		for (int i = 0; i < st.capacity / 2; i++) {
 			if (StackPush(&st, &t)) {
-				printf("Test failed: could not push element\n");
+				printf("TEST FAILED: could not push element\n");
 				return;
 			}
 
@@ -407,7 +408,7 @@ void TestStackDump() {
 		}
 
 		if (StackDump(&st) == 1) {
-			printf("Test failed: StackDump could not print initialized stack\n");
+			printf("TEST FAILED: StackDump could not print initialized stack\n");
 			success = 0;
 		}
 
@@ -415,7 +416,7 @@ void TestStackDump() {
 			printf("Test successfull\n\n");
 		}
 
-		free(st.data);
+		free(st.datachunk);
 	}
 
 
@@ -432,7 +433,7 @@ void TestStackCheck() {
 		Stack NCstack = {};
 
 		if (StackCheck(&NCstack) != 0) {
-			printf("Test failed: StackCheck could not recognise non-initialized stack\n");
+			printf("TEST FAILED: StackCheck could not recognise non-initialized stack\n");
 			success = 0;
 		}
 
@@ -451,7 +452,7 @@ void TestStackCheck() {
 		}
 
 		if (StackCheck(&Cstack) != 0) {
-			printf("Test failed: StackCheck could not recognise not-broken initialized stack\n");
+			printf("TEST FAILED: StackCheck could not recognise not-broken initialized stack\n");
 			success = 0;
 		}
 
@@ -459,7 +460,7 @@ void TestStackCheck() {
 			printf("Test successful\n");
 		}
 
-		free(Cstack.data);
+		free(Cstack.datachunk);
 	}
 	
 	printf("Testing with not-broken destroyed initialized stack...\n");
@@ -472,14 +473,14 @@ void TestStackCheck() {
 		}
 
 		if (StackCheck(&Dstack) != 0) {
-			printf("Test failed: StackCheck could not recognise not-broken destroyed stack\n");
+			printf("TEST FAILED: StackCheck could not recognise not-broken destroyed stack\n");
 			success = 0;
 		}
 
 		if (success) {
 			printf("Test successful\n");
 		}
-		free(Dstack.data);
+		free(Dstack.datachunk);
 	}
 
 	printf("Testing with broken-status stack...\n");
@@ -488,14 +489,14 @@ void TestStackCheck() {
 		Bstack.status = 8;
 
 		if (StackCheck(&Bstack) == 0) {
-			printf("Test failed: StackCheck could not recognise broken-status stack\n");
+			printf("TEST FAILED: StackCheck could not recognise broken-status stack\n");
 			success = 0;
 		}
 
 		if (success) {
 			printf("Test successful\n");
 		}
-		free(Bstack.data);
+		free(Bstack.datachunk);
 	}
 
 	printf("Testing with broken initialized stack...\n");
@@ -509,14 +510,14 @@ void TestStackCheck() {
 		CBstack.size = -1;
 
 		if (StackCheck(&CBstack) == 0) {
-			printf("Test failed: StackCheck could not recognise broken initialized stack\n");
+			printf("TEST FAILED: StackCheck could not recognise broken initialized stack\n");
 			success = 0;
 		}
 
 		if (success) {
 			printf("Test successful\n");
 		}
-		free(CBstack.data);
+		free(CBstack.datachunk);
 	}
 
 	printf("Testing with broken destroyed stack...\n");
@@ -532,7 +533,7 @@ void TestStackCheck() {
 		DBstack.capacity = 2;
 
 		if (StackCheck(&DBstack) == 0) {
-			printf("Test failed: StackCheck could not recognise broken destroyed stack\n");
+			printf("TEST FAILED: StackCheck could not recognise broken destroyed stack\n");
 			success = 0;
 		}
 
@@ -563,7 +564,7 @@ void TestCanary() {
 		}
 
 		if (StackCheck(&(Butcher.Victim)) != STK_BAD_LCAN) {
-			printf("Test failed: StackCheck could not detect left attack\n");
+			printf("TEST FAILED: StackCheck could not detect left attack\n");
 		}
 		else {
 			printf("Test successful\n");
@@ -584,7 +585,7 @@ void TestCanary() {
 		}
 
 		if (StackCheck(&(Butcher.Victim)) != STK_BAD_RCAN) {
-			printf("Test failed: StackCheck could not detect right attack\n");
+			printf("TEST FAILED: StackCheck could not detect right attack\n");
 		}
 		else {
 			printf("Test successful\n");
@@ -601,7 +602,7 @@ void TestPrintError() {
 	printf("Testing for no errors code...\n");
 	{
 		if (StackPrintError(code) != 0) {
-			printf("Test failed: StackPrintError could not proceed zero errors code\n");
+			printf("TEST FAILED: StackPrintError could not proceed zero errors code\n");
 		}
 		else {
 			printf("Test successful\n");
@@ -610,10 +611,10 @@ void TestPrintError() {
 
 	printf("Testing for all errors code...\n");
 	{
-		code = 511;
+		code = 8191;
 
-		if (StackPrintError(code) != 9) {
-			printf("Test failed: StackPrintError could not proceed all errors code\n");
+		if (StackPrintError(code) != 13) {
+			printf("TEST FAILED: StackPrintError could not proceed all errors code\n");
 		}
 		else {
 			printf("Test successful\n");
@@ -625,7 +626,7 @@ void TestPrintError() {
 		code = 441;
 
 		if (StackPrintError(code) != 6) {
-			printf("Test failed: StackPrintError could not proceed three errors code\n");
+			printf("TEST FAILED: StackPrintError could not proceed three errors code\n");
 		}
 		else {
 			printf("Test successful\n");
@@ -642,7 +643,7 @@ void TestStackHash() {
 		Stack st;
 
 		if (StackHash(&st) != 0) {
-			printf("Test failed: StackHash returned wrong HashSum\n");
+			printf("TEST FAILED: StackHash returned wrong HashSum\n");
 		}
 
 		else {
