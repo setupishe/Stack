@@ -613,10 +613,23 @@ void TestPrintError() {
 	}
 
 	printf("Testing for all errors code...\n");
-	{
-		code = 16383;
+	{	
 
-		if (StackPrintError(code) != 14) {
+#ifdef USEHASH
+		code = 16383;
+#else
+		code = 8191;
+#endif
+
+		int errorsN = 0;
+
+#ifdef USEHASH
+		errorsN = 14;
+#else
+		errorsN = 13;
+#endif
+
+		if (StackPrintError(code) != errorsN) {
 			printf("TEST FAILED: StackPrintError could not proceed all errors code\n");
 		}
 		else {
@@ -636,6 +649,8 @@ void TestPrintError() {
 		}
 	}
 }
+
+#ifdef USEHASH
 
 void TestStackHash(int n) {
 
@@ -690,3 +705,4 @@ void TestStackHash(int n) {
 		free(st.datachunk);
 	}
 }
+#endif

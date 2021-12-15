@@ -80,10 +80,12 @@ int TrueStackCtor(Stack* st, size_t isize, const char* STK_name) {
 
 	st->status = STK_INITIALISED;
 
+#ifdef USEHASH
 	if (StackHash(st) != 0) {
 		printf("StackHash error\n");
 		return 1;
 	}
+#endif
 
 	return 0;
 }
@@ -108,10 +110,12 @@ int StackPush(Stack* st, const void *ptr) {
 
 	memcpy(((char*)st->data + (st->size++) * st->itype), ptr, st->itype);
 
+#ifdef USEHASH
 	if (StackHash(st) != 0) {
 		printf("StackHash error\n");
 		return 1;
 	}
+#endif
 
 	return 0;
 }
@@ -132,10 +136,12 @@ int StackPop(Stack* st, void *value) {
 
 	memcpy(value, (const void*)((char*)st->data + (st->size-- - 1) * st->itype), st->itype);
 
+#ifdef USEHASH
 	if (StackHash(st) != 0) {
 		printf("StackHash error\n");
 		return 1;
 	}
+#endif
 
 	int gap = st->capacity / STK_LIN_ADD + 2;
 
@@ -238,10 +244,12 @@ int StackResize(Stack* st, int param) {
 		}
 	}
 	
+#ifdef USEHASH
 	if (StackHash(st) != 0) {
 		printf("StackHash error\n");
 		return 1;
 	}
+#endif
 
 	return 0;
 }
@@ -430,12 +438,15 @@ unsigned long int TrueStackCheck(Stack* st, const char* funcname, const char* fi
 			broken |= STK_BAD_N_RCAN;
 		}
 
+#ifdef USEHASH
 		unsigned long int temp = st->HashSum;
 
 		if (StackHash(st) != 0 || st->HashSum != temp) {
 			printf("StackHash error\n");
 			broken |= STK_BAD_HASH;
 		}
+#endif
+
 	}
 	else if (st->status == STK_DESTROYED) {
 
@@ -489,7 +500,15 @@ int StackPrintError(unsigned long int error) {
 	int code = 1;
 	int printed = 0;
 
-	for (int i = 0; i <= 13; i++) {
+	int totalerrors = 0;
+
+#ifdef USEHASH
+	totalerrors = 13;
+#else
+	totalerrors = 12;
+#endif
+
+	for (int i = 0; i <= totalerrors; i++) {
 
 		if (error & code) {
 			if (printf(ErrorNames[i]) < 0) {
@@ -507,6 +526,7 @@ int StackPrintError(unsigned long int error) {
 	return printed;
 }
 
+#ifdef USEHASH
 int StackHash(Stack* st) {
 
 	assert(st);
@@ -550,6 +570,8 @@ int StackHash(Stack* st) {
 
 
 }
+#endif
+
 
 int StackArrangeData(Stack* st) {
 

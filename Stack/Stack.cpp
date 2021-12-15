@@ -21,7 +21,10 @@ int main()
     TestStackCheck();
     TestPrintError();
     TestCanary();
+
+#ifdef USEHASH
     TestStackHash(10)
+#endif
 
     ASSERT(STK_BAD_DATA_PTR); //testing ASSERT macros, not a function because it exits the program
     

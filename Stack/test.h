@@ -28,5 +28,7 @@ void TestCanary();
 //Tests StackPrintError using different error codes
 void TestPrintError();
 
+#ifdef USEHASH
 //Tests StackHash using initialised stack filled with int n elements
 void TestStackHash(int n);
+#endif

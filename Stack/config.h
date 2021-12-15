@@ -1,5 +1,6 @@
 #pragma once
 
+#define USEHASH
 
 typedef struct {
 	int a;
