@@ -80,6 +80,11 @@ int TrueStackCtor(Stack* st, size_t isize, const char* STK_name) {
 
 	st->status = STK_INITIALISED;
 
+	if (StackHash(st) != 0) {
+		printf("StackHash error\n");
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -103,6 +108,11 @@ int StackPush(Stack* st, const void *ptr) {
 
 	memcpy(((char*)st->data + (st->size++) * st->itype), ptr, st->itype);
 
+	if (StackHash(st) != 0) {
+		printf("StackHash error\n");
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -122,6 +132,10 @@ int StackPop(Stack* st, void *value) {
 
 	memcpy(value, (const void*)((char*)st->data + (st->size-- - 1) * st->itype), st->itype);
 
+	if (StackHash(st) != 0) {
+		printf("StackHash error\n");
+		return 1;
+	}
 
 	int gap = st->capacity / STK_LIN_ADD + 2;
 
@@ -224,6 +238,11 @@ int StackResize(Stack* st, int param) {
 		}
 	}
 	
+	if (StackHash(st) != 0) {
+		printf("StackHash error\n");
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -410,6 +429,13 @@ unsigned long int TrueStackCheck(Stack* st, const char* funcname, const char* fi
 		if (*st->NameRCanPtr != N_RCAN_VALUE) {
 			broken |= STK_BAD_N_RCAN;
 		}
+
+		unsigned long int temp = st->HashSum;
+
+		if (StackHash(st) != 0 || st->HashSum != temp) {
+			printf("StackHash error\n");
+			broken |= STK_BAD_HASH;
+		}
 	}
 	else if (st->status == STK_DESTROYED) {
 
@@ -463,7 +489,7 @@ int StackPrintError(unsigned long int error) {
 	int code = 1;
 	int printed = 0;
 
-	for (int i = 0; i <= 12; i++) {
+	for (int i = 0; i <= 13; i++) {
 
 		if (error & code) {
 			if (printf(ErrorNames[i]) < 0) {
@@ -481,26 +507,47 @@ int StackPrintError(unsigned long int error) {
 	return printed;
 }
 
-unsigned long int StackHash(Stack* st) {
+int StackHash(Stack* st) {
 
 	assert(st);
 
 	unsigned long int Sum = 0;
 
-	Sum += (unsigned long int)(st->LCan + st->RCan);
-	Sum += (unsigned long int)(st->size + st->capacity + st->status + st->itype);
-	
-	for (int i = 0; i < strlen(st->name); i++) {
-		Sum += i * int(*(st->name + i));
+	if (st->status == STK_INITIALISED) {
+
+		Sum += (unsigned long int)(st->size + st->capacity + st->status + st->itype);
+		Sum += (unsigned long int)(st->datachunk);
+		Sum += (unsigned long int)(st->data);
+		Sum += (unsigned long int)(st->DataLCanPtr);
+		Sum += (unsigned long int)(st->DataRCanPtr);
+		Sum += (unsigned long int)(st->namechunk);
+		Sum += (unsigned long int)(st->name);
+		Sum += (unsigned long int)(st->NameLCanPtr);
+		Sum += (unsigned long int)(st->NameRCanPtr);
+
+		for (int i = 0; i < strlen(st->name); i++) {
+			Sum += i * int(*(st->name + i));
+		}
+
+		for (int i = 0; i < st->capacity * st->itype; i++) {
+			Sum += i * int(*((char *)st->data + i));
+		}
+
+		st->HashSum = Sum;
+
+		if (Sum > 0) {
+			return 0;
+		}
+		else {
+			return 1;
+		}
+	}
+	else {
+		printf("StackHash error: stack is not initialised\n");
+		return 1;
 	}
 
-	for (int i = 0; i < st->capacity * st->itype; i++) {
-		Sum += i * int(*((int*)st->data + i));
-	}
 
-	st->HashSum = Sum;
-
-	return Sum;
 
 }
 

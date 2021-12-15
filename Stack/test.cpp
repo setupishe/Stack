@@ -590,6 +590,9 @@ void TestCanary() {
 		else {
 			printf("Test successful\n");
 		}
+		if (Butcher.Victim.datachunk) {
+			free(Butcher.Victim.datachunk);
+		}
 	}
 }
 
@@ -611,9 +614,9 @@ void TestPrintError() {
 
 	printf("Testing for all errors code...\n");
 	{
-		code = 8191;
+		code = 16383;
 
-		if (StackPrintError(code) != 13) {
+		if (StackPrintError(code) != 14) {
 			printf("TEST FAILED: StackPrintError could not proceed all errors code\n");
 		}
 		else {
@@ -621,12 +624,12 @@ void TestPrintError() {
 		}
 	}
 
-	printf("Testing for all errors code...\n");
+	printf("Testing for several errors code...\n");
 	{
 		code = 441;
 
 		if (StackPrintError(code) != 6) {
-			printf("TEST FAILED: StackPrintError could not proceed three errors code\n");
+			printf("TEST FAILED: StackPrintError could not proceed six errors code\n");
 		}
 		else {
 			printf("Test successful\n");
@@ -634,22 +637,56 @@ void TestPrintError() {
 	}
 }
 
-void TestStackHash() {
+void TestStackHash(int n) {
 
-	printf("\n\n-------------------------Testing StackPrintError-------------------------\n\n");
+	printf("\n\n-------------------------Testing StackHash-------------------------\n\n");
 
-	printf("Testing with not-initialised stack...\n"); 
-	{
-		Stack st;
+	Stack st;
+	int success = 1;
+	if (StackCtor(st, sizeof(int))) {
+		printf("Cannot create test stack\n");
+		return;
+	}
 
-		if (StackHash(&st) != 0) {
-			printf("TEST FAILED: StackHash returned wrong HashSum\n");
-		}
+	int* a = NULL;
 
-		else {
-			printf("Test successful\n");
+	if ((a = (int*)calloc(n, sizeof(int))) == NULL) {
+		printf("Memory allocation error\n");
+		return;
+	}
+
+	for(int i = 0; i < n; i++) {
+		a[i] = i;
+		if (StackPush(&st, (a + i)) != 0) {
+			printf("Test stack filling error\n");
+			return;
 		}
 	}
-	
 
+	if (StackHash(&st) != 0) {
+		printf("TEST FAILED: StackHash could not calculate hashsum\n");
+		success = 0;
+	}
+
+	unsigned long int temp = st.HashSum;
+
+	st.HashSum = 2;
+
+	if (StackHash(&st) != 0) {
+		printf("TEST FAILED: StackHash could not calculate hashsum\n");
+		success = 0;
+	}
+
+	if(temp != st.HashSum) {
+		printf("TEST FAILED: StackHash did not ignore HashSum\n");
+		success = 0;
+	}
+
+	if (success) {
+		printf("Test successful\n");
+	}
+	
+	if (st.datachunk) {
+		free(st.datachunk);
+	}
 }

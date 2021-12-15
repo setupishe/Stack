@@ -6,8 +6,6 @@
 #include "test.h"
 
 /*ToDo:
-* 
-* канарейки по бокам массива данных и имени
 и хэш (и не забудь вставить в функции)
 и дефайны (уровни защиты)
 */
@@ -23,7 +21,7 @@ int main()
     TestStackCheck();
     TestPrintError();
     TestCanary();
-    //TestStackHash()
+    TestStackHash(10)
 
     ASSERT(STK_BAD_DATA_PTR); //testing ASSERT macros, not a function because it exits the program
     

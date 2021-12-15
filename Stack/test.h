@@ -28,5 +28,5 @@ void TestCanary();
 //Tests StackPrintError using different error codes
 void TestPrintError();
 
-//Tests StackHash using initialised and not-initialised stack
-void TestStackHash();
+//Tests StackHash using initialised stack filled with int n elements
+void TestStackHash(int n);

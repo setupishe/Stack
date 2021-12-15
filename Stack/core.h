@@ -75,7 +75,8 @@ enum Errors : unsigned long {
     STK_BAD_D_LCAN = 512,
     STK_BAD_D_RCAN = 1024,
     STK_BAD_N_LCAN = 2048,
-    STK_BAD_N_RCAN = 4096
+    STK_BAD_N_RCAN = 4096,
+    STK_BAD_HASH = 8192
 };
 
 static const char* ErrorNames[] = {
@@ -92,6 +93,7 @@ static const char* ErrorNames[] = {
     "ERROR: Stack's right data canary is not valid. We are being attacked!\n",
     "ERROR: Stack's left name canary is not valid. We are being attacked!\n",
     "ERROR: Stack's right name canary is not valid. We are being attacked!\n",
+    "ERROR: Stack's HashSum is not valid. We are being attacked!\n",
 };
 
 //Puts stname to st.name
@@ -127,7 +129,7 @@ unsigned long int TrueStackCheck(Stack* St, const char* funcname, const char* fi
 int StackPrintError(unsigned long int error);
 
 //Makes hash-sum of Stack and puts it into it's HashSum value
-unsigned long int StackHash(Stack* st);
+int StackHash(Stack* st);
 
 //Assigns data and datacanaries pointers after datachunk (re)allocation
 int StackArrangeData(Stack* st);
